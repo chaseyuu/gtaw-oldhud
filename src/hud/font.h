@@ -9,6 +9,10 @@ extern const char* const kFallbackFontMime;
 extern const char* const kFallbackFontFormat;
 extern const char* const kFallbackFontWeights;
 
+// True when the built-in face is the game's own, so the layout is the old HUD's untouched numbers
+// and not the ones corrected for a substitute.
+extern const bool kFallbackFontIsOriginal;
+
 // Base64, split into pieces so no single string literal approaches MSVC's 65,535 byte cap.
 // Null terminated.
 extern const char* const kFallbackFontBase64Parts[];

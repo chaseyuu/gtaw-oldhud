@@ -73,7 +73,7 @@ GTA World replaced its HUD. Some of us preferred the old one — the plain white
 1. **Every line of the old HUD** — balances, duty lines, ELS state, aviation line, speed, fuel bar, odometer, compass, area, street and the server line
 2. **Pixel-faithful placement** — offsets from the minimap's corner as a fraction of the screen, at the game's own text scale, so it keeps its shape at any resolution and follows the big map
 3. **The right size *and* the right width** — cap heights matched with canvas text metrics, and the face squeezed to the old HUD's proportions
-4. **Your own font** — drop a `.ttf` next to the plugin to draw with the original face; Oswald is built in as the fallback
+4. **Your own font** — drop a `.ttf` next to the plugin to draw with the original face; League Gothic is built in as the fallback
 5. **Listens only** — no hooks, no natives, no memory access, no outbound connection, no update check
 6. **No dependencies** — WinHTTP and a 300-line JSON reader, fuzzed under ASan and UBSan
 7. **Reproducible builds** with signed provenance on every release
@@ -211,7 +211,7 @@ The old HUD used the game's own HUD face, **Chalet Comprime Cologne Sixty**. It 
 
 1. **`gtaw-oldhud.font.ttf` next to the `.asi`**, if it is there. `.ttf`, `.otf`, `.woff` and `.woff2` all work and the name is a setting. This is how to get the original face exactly: put your own copy there.
 2. **Chalet Comprime Cologne Sixty installed on the machine**, asked for by name.
-3. **Oswald**, compiled into the plugin under the SIL Open Font License. The font and its licence are in [`font/`](font/); [`tools/embed_font.py`](tools/embed_font.py) turns the file there into `src/hud/font.cpp`. Nothing is fetched to build it and nothing is fetched to use it.
+3. **League Gothic**, compiled into the plugin under the SIL Open Font License. The font and its licence are in [`font/`](font/); [`tools/embed_font.py`](tools/embed_font.py) turns the file there into `src/hud/font.cpp`. Nothing is fetched to build it and nothing is fetched to use it.
 
 Whichever face is used, the text comes out the right size and the right width, because both are **measured rather than assumed**: canvas text metrics find the font size that gives the cap height the game would have drawn, and four strings measured off the old HUD's screenshots give its ink width per unit of cap height, which the resolved face is squeezed to match.
 
@@ -306,6 +306,6 @@ Attaching to a browser's debugging port is also something infostealers do, so ex
 
 <sub>
 
-MIT © [MatiDeZeta](https://github.com/MatiDeZeta) · [gtaw-oldhud](https://github.com/MatiDeZeta/gtaw-oldhud) · Not affiliated with GTA World or Cfx.re. Oswald © The Oswald Project Authors, [SIL OFL 1.1](font/OFL.txt).
+MIT © [MatiDeZeta](https://github.com/MatiDeZeta) · [gtaw-oldhud](https://github.com/MatiDeZeta/gtaw-oldhud) · Not affiliated with GTA World or Cfx.re. League Gothic © The League Gothic Project Authors, [SIL OFL 1.1](font/OFL.txt).
 
 </sub>

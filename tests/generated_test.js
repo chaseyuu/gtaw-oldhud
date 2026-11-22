@@ -40,7 +40,7 @@ check('decimal separator is a dot', /:\s*\d+,\d+(vh|vw|px|;)/.test(css) === fals
 
 const used = new Set([...css.matchAll(/var\((--[a-z0-9-]+)/g)].map(m => m[1]));
 const defined = new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/g)].map(m => m[1]));
-const setAtRuntime = new Set(['--ohud-sx']);
+const setAtRuntime = new Set(['--ohud-sx', '--ohud-wx']);
 const missing = [...used].filter(v => !defined.has(v) && !setAtRuntime.has(v));
 check('no undefined custom properties', missing.length ? missing.join(',') : 'none', 'none');
 
@@ -76,15 +76,15 @@ section('the font');
 const faces = [...css.matchAll(/@font-face\{font-family:"([^"]+)"/g)].map(m => m[1]);
 check('one face is embedded', faces.join(','), 'GTAWOldHudCondensed');
 check('compiled in as a data URI', /src:url\(data:font\/ttf;base64,[A-Za-z0-9+/=]{40000,}\) format\("truetype"\)/.test(css), 'true');
-// A range rather than a single weight is what makes the browser instance the variable font at
-// whatever font_weight asks for instead of synthesising a heavier one.
-check('the weight axis is declared', /@font-face\{font-family:"GTAWOldHudCondensed";font-style:normal;font-weight:200 700;/.test(css), 'true');
+// The face has one weight, so the range is just that weight. A variable face placed next to the .asi
+// is declared over 100 to 900 instead (see the font_file setting).
+check('the weight axis is declared', /@font-face\{font-family:"GTAWOldHudCondensed";font-style:normal;font-weight:400;/.test(css), 'true');
 check('and the default is regular', /--ohud-weight:400;/.test(css), 'true');
 check('which the root draws at', /font-weight:var\(--ohud-weight\)/.test(css), 'true');
 const stack = /--ohud-font:([^;]+);/.exec(css)[1];
 check('the game\'s own face is asked for first', stack.startsWith('"ChaletComprime-CologneSixty"'), 'true');
 check('then the embedded one', stack.indexOf('GTAWOldHudCondensed') > 0, 'true');
-check('and it is measured, not assumed', /transform:scaleX\(var\(--ohud-sx,1\)\)/.test(css), 'true');
+check('and it is measured, not assumed', /transform:scaleX\(calc\(var\(--ohud-sx,1\) \* var\(--ohud-wx,1\)\)\)/.test(css), 'true');
 
 section('the script and the stylesheet name the same font stack');
 check('the measured stack is the drawn stack', script.includes(JSON.stringify(stack)), 'true');
@@ -118,7 +118,7 @@ check('street',   text('street'), 'Brouge Avenue / Carson Avenue');
 check('speed',    text('speed'), 'MPH 0');
 check('fuel',     text('fuel'), 'Fuel |||||||||');
 check('odometer', text('odo'), '1.08 mi.');
-check('footer',   text('footer'), 'GTA.WORLD — Roleplay v1.8.8a — 188/1500 — 14:07');
+check('footer',   text('footer'), 'GTA.WORLD – Roleplay v1.8.8a – 188/1500 – 14:07');
 
 section('and places it where the old HUD placed it');
 // At or above 1920 wide the old HUD kept measuring the balance inset against 1920.

@@ -212,6 +212,8 @@ const char* kBaseCss = R"CSS(
 }
 /* One drawn string. The game gives every one of these an alpha of 200, which covers the
    outline as well as the glyph, so it is applied here rather than in each colour. */
+/* --ohud-wx is a further per-line correction on top of it, for the strings where the built-in
+   face and the original differ in width by more than the one squeeze can cover. */
 /* --ohud-sx squeezes the text horizontally. Whichever face the client resolved, it is measured
    at run time and corrected to the old HUD's proportions, so a substitute does not come out
    half again as wide at the same height. */
@@ -222,11 +224,13 @@ const char* kBaseCss = R"CSS(
   color:var(--ohud-text);
   text-shadow:var(--ohud-outline);
   opacity:var(--ohud-alpha);
-  transform:scaleX(var(--ohud-sx,1));
+  transform:scaleX(calc(var(--ohud-sx,1) * var(--ohud-wx,1)));
   transform-origin:0 50%;
 }
+/* The game does not kern its text, so neither does this when drawing the face it was made for. */
+#gtaw-oldhud-root.ohud-orig .ohud-line{ font-kerning:none; font-feature-settings:"kern" 0; }
 #gtaw-oldhud-root .ohud-mid{
-  transform:translateX(-50%) scaleX(var(--ohud-sx,1));
+  transform:translateX(-50%) scaleX(calc(var(--ohud-sx,1) * var(--ohud-wx,1)));
   transform-origin:50% 50%;
 }
 /* The staff lines were the one thing the old HUD drew fully opaque. */
@@ -255,7 +259,7 @@ const char* kBaseCss = R"CSS(
   align-items:center; justify-content:center; border-radius:50%;
   background:#c0392b; color:#fff; border:1px solid rgba(255,255,255,0.85);
   font:15px/1 sans-serif; text-shadow:none; cursor:pointer; pointer-events:auto;
-  transform:scaleX(calc(1 / var(--ohud-sx,1)));
+  transform:scaleX(calc(1 / (var(--ohud-sx,1) * var(--ohud-wx,1))));
 }
 #gtaw-oldhud-root.ohud-editing .ohud-x::before{ content:"\00d7"; }
 )CSS";
@@ -316,22 +320,35 @@ const char* kScript = R"JS(function (CFG) {
   // x runs right from the minimap's right edge and y runs up from its bottom edge, both as a
   // fraction of the screen; s is the game's text scale. These are the numbers the old HUD drew
   // with, so the block keeps its shape at any resolution the way the original did.
-  var L = {
+  var L = CFG.tuned ? {
+    avi:    { x: 0.006, y: 0.205, s: 0.8 },
+    speed:  { x: 0.006, y: 0.165, s: 0.8 },
+    fuel:   { x: 0.006, y: 0.125, s: 0.8 },
+    odo:    { x: 0.006, y: 0.085, s: 0.8 },
+    sdiv:   { x: 0.00734, y: 0.04173, s: 0.745, wx: 0.85 },
+    card:   { x: 0.025, y: 0.04693, s: 1.0, wx: 0.857 },
+    cdiv:   { x: 0.04034, y: 0.04173, s: 0.745, wx: 0.85 },
+    zone:   { x: 0.04656, y: 0.04093, s: 0.525, wx: 0.92 },
+    street: { x: 0.04656, y: 0.01693, s: 0.44, wx: 0.862 }
+  } : {
     avi:    { x: 0.006, y: 0.205, s: 0.8 },
     speed:  { x: 0.006, y: 0.165, s: 0.8 },
     fuel:   { x: 0.006, y: 0.125, s: 0.8 },
     odo:    { x: 0.006, y: 0.085, s: 0.8 },
     sdiv:   { x: 0.005, y: 0.045, s: 1.0 },
     card:   { x: 0.025, y: 0.046, s: 1.0 },
-    cdiv:   { x: 0.0393, y: 0.0533, s: 1.0 },
-    zone:   { x: 0.04604, y: 0.03907, s: 0.5 },
-    street: { x: 0.04604, y: 0.01507, s: 0.4 }
+    cdiv:   { x: 0.03904, y: 0.04593, s: 1.05 },
+    zone:   { x: 0.04604, y: 0.03907, s: 0.5, wx: 0.96 },
+    street: { x: 0.04604, y: 0.01507, s: 0.4, wx: 0.99 }
   };
+
 
   // Cap height of the game's HUD face, as a fraction of the screen height per unit of text
   // scale, and the drop from the top of the game's text cell to the top of the capitals,
   // measured in cap heights. Both were read off the old HUD screenshots.
-  var CAP_PER_SCALE = 0.03444, CELL_TO_CAP = 0.4123;
+  // The built-in face's capitals read shorter than the game's, so it is drawn 5.5% larger; a
+  // face the user supplies is taken to be the original and drawn at the old HUD's own numbers.
+  var CAP_PER_SCALE = CFG.tuned ? 0.03634 : 0.03444, CELL_TO_CAP = 0.4123;
 
   // The old HUD moved the whole docked block right by this much while the big map was open.
   var BIGMAP_SHIFT = 0.089;
@@ -348,13 +365,22 @@ const char* kScript = R"JS(function (CFG) {
   // Balances and the server line were positioned against the screen, not the minimap: the
   // balances centred 70px in from the right edge and the server line 38px up from the bottom,
   // both at 1920 by 1080 and both scaling with the screen, as the game's own text does.
-  var CASH_Y = 0.0591, BANK_Y = 0.0991, ADMIN_Y = 0.140, TESTER_Y = 0.175;
-  var MONEY_X = 1 - 70 / 1920, FOOTER_Y = 1 - 38 / 1080;
-  var CASH_SCALE = 0.856, BANK_SCALE = 0.75, STAFF_SCALE = 0.5, FOOTER_SCALE = 0.45;
+  var CASH_Y = CFG.tuned ? 0.0603 : 0.0591, BANK_Y = CFG.tuned ? 0.0983 : 0.0991,
+      ADMIN_Y = 0.140, TESTER_Y = 0.175;
+  var MONEY_MARGIN = 13 / 1920, MONEY_X = 1 - 70 / 1920, FOOTER_Y = 1 - (CFG.tuned ? 41 : 38) / 1080;
+  var CASH_SCALE = CFG.tuned ? 0.77 : 0.856, BANK_SCALE = CFG.tuned ? 0.715 : 0.75,
+      STAFF_SCALE = 0.5, FOOTER_SCALE = CFG.tuned ? 0.50 : 0.45;
 
-  // The ELS state sat 0.18 of the screen above the minimap's bottom edge, over on the right with
-  // the balances, as two lines: the word ELS and the state under it.
-  var ELS_LIFT = 0.18, ELS_SCALE = 0.6;
+  // Extra width factors on top of the face's own squeeze, one per string, measured against the
+  // old HUD's screenshots with the built-in face. 1 leaves the squeeze alone.
+  // The lines that were not measured against a screenshot take the average of the ones that were.
+  var OTHER_WX = CFG.tuned ? 0.9 : 1;
+  var CASH_WX = CFG.tuned ? 0.96 : 0.93, BANK_WX = CFG.tuned ? 0.885 : 0.93, FOOTER_WX = CFG.tuned ? 0.76 : 0.94;
+
+  // The ELS state sat 0.1795 of the screen above the minimap's bottom edge, over on the right with
+  // the balances, as two lines: the word ELS and the state under it, ELS_LINE of the screen
+  // apart. Both measured against a 1920 by 1080 screenshot of the HUD.
+  var ELS_LIFT = 0.1795, ELS_SCALE = 0.57, ELS_LINE = 38 / 1080;
 
   // One line of the game's text, as a fraction of the screen per unit of text scale. This is
   // what ~n~ advanced by, and it is also the gap the old HUD left between its two staff lines.
@@ -400,6 +426,7 @@ const char* kScript = R"JS(function (CFG) {
 
   var root = document.createElement('div');
   root.id = ROOT_ID;
+  if (!CFG.tuned) root.className = 'ohud-orig';
 
   // One drawn string, with its own place in the layout table.
   function line(spec, mid) {
@@ -580,7 +607,7 @@ const char* kScript = R"JS(function (CFG) {
       if (cancelled) lay = cloneLayout(laySaved);
       else if (!sameLayout(lay, laySaved)) layPending = formatLayout();
     }
-    root.className = editing ? 'ohud-editing' : '';
+    root.className = (CFG.tuned ? '' : 'ohud-orig ') + (editing ? 'ohud-editing' : '');
     schedule();
   }
 
@@ -862,7 +889,8 @@ const char* kScript = R"JS(function (CFG) {
 
   // Places one string the way the game placed it: x and y name the top-left (or top-centre) of
   // the game's text cell, so the cap top is CELL_TO_CAP cap heights below y.
-  function place(node, x, y, scale) {
+  function place(node, x, y, scale, wx) {
+    node.style.setProperty('--ohud-wx', String(wx || OTHER_WX));
     var capPx = CAP_PER_SCALE * scale * CFG.fontScale * (window.innerHeight || 1);
     var f = fontFor(capPx);
     node.style.fontSize = f.size + 'px';
@@ -872,7 +900,6 @@ const char* kScript = R"JS(function (CFG) {
 
   // The balances are centred on one point, so a long one spills toward the screen edge. The game
   // keeps a margin there; slide such a line left until it does.
-  var MONEY_MARGIN = 13 / 1920;
   function keepInside(node, W) {
     if (!node.getBoundingClientRect) return;
     var over = node.getBoundingClientRect().right - (W - MONEY_MARGIN * W);
@@ -898,8 +925,8 @@ const char* kScript = R"JS(function (CFG) {
 
     setText(cashEl, money_(hud.cash));
     setText(bankEl, money_(hud.bank));
-    place(cashEl, moneyX + lc.dx, CASH_Y * H + lc.dy, CASH_SCALE * lc.s);
-    place(bankEl, moneyX + lb.dx, BANK_Y * H + lb.dy, BANK_SCALE * lb.s);
+    place(cashEl, moneyX + lc.dx, CASH_Y * H + lc.dy, CASH_SCALE * lc.s, CASH_WX);
+    place(bankEl, moneyX + lb.dx, BANK_Y * H + lb.dy, BANK_SCALE * lb.s, BANK_WX);
     keepInside(cashEl, W); keepInside(bankEl, W);
     show(cashEl, CFG.showCash);
     show(bankEl, CFG.showBank);
@@ -920,7 +947,7 @@ const char* kScript = R"JS(function (CFG) {
     elsStateEl.className = 'ohud-line ohud-mid ' +
         (code === 3 ? 'ohud-g' : code === 2 ? 'ohud-y' : 'ohud-r');
     place(elsEl,      moneyX + le.dx, elsY, ELS_SCALE * le.s);
-    place(elsStateEl, moneyX + le.dx, elsY + LINE_PER_SCALE * ELS_SCALE * le.s * H, ELS_SCALE * le.s);
+    place(elsStateEl, moneyX + le.dx, elsY + ELS_LINE * le.s * H, ELS_SCALE * le.s);
 
     // While the editor is open the state is shown so it can be placed.
     var elsOn = editing || (CFG.showEls && !!spd.visible && !!spd.elsVisible &&
@@ -936,14 +963,14 @@ const char* kScript = R"JS(function (CFG) {
     var tail = '';
     // The old HUD wrote both counts plainly, with no thousands separator.
     if (CFG.showPlayers && players !== null)
-      tail += ' \u2014 ' + Math.round(players) + '/' + CFG.maxPlayers;
-    if (CFG.showTime && time) tail += ' \u2014 ' + time;
+      tail += ' \u2013 ' + Math.round(players) + '/' + CFG.maxPlayers;
+    if (CFG.showTime && time) tail += ' \u2013 ' + time;
 
     var lf = adj('footer');
-    fServer.textContent = CFG.serverName + ' \u2014 ';
+    fServer.textContent = CFG.serverName + ' \u2013 ';
     fMode.textContent   = CFG.gamemodeName + (version ? ' v' + version : '');
     fTail.textContent   = tail;
-    place(footEl, W / 2 + lf.dx, FOOTER_Y * H + lf.dy, FOOTER_SCALE * lf.s);
+    place(footEl, W / 2 + lf.dx, FOOTER_Y * H + lf.dy, FOOTER_SCALE * lf.s, FOOTER_WX);
     show(footEl, CFG.showFooter);
 
     // ---- everything docked against the minimap -----------------------------------------
@@ -963,7 +990,7 @@ const char* kScript = R"JS(function (CFG) {
     function put(node, l) {
       var spec = node._spec;
       l = l || NO_ADJ;
-      place(node, ox + spec.x * W + l.dx, oy - spec.y * H + l.dy, spec.s * l.s);
+      place(node, ox + spec.x * W + l.dx, oy - spec.y * H + l.dy, spec.s * l.s, spec.wx);
     }
 
     // A property name replaces the whole location block with one line where the street goes,
@@ -1309,6 +1336,8 @@ std::string buildInstallScript()
     cfg += ",\"showTime\":"     + std::string(g_set.showTime     ? "true" : "false");
     cfg += ",\"fontScale\":"    + num(g_set.fontScale, 4);
     cfg += ",\"fontWeight\":"   + std::to_string(g_set.fontWeight);
+    // The per-line corrections were measured with the built-in face, so they apply to it alone.
+    cfg += ",\"tuned\":"        + std::string((g_userFontBase64.empty() && !kFallbackFontIsOriginal) ? "true" : "false");
     cfg += ",\"dockX\":"        + num(g_set.dockX, 5);
     cfg += ",\"dockY\":"        + num(g_set.dockY, 5);
     cfg += "}";

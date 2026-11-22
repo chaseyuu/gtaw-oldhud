@@ -44,7 +44,7 @@ const CFG = {
   showSpeed: true, showFuel: true, showOdometer: true, showAviation: true,
   showStaff: true, showEls: true, elsHoldMs: 5000,
   showFooter: true, showPlayers: true, showTime: true,
-  fontScale: 1.0, fontWeight: 400, dockX: 0.0, dockY: 0.0,
+  fontScale: 1.0, fontWeight: 400, tuned: true, dockX: 0.0, dockY: 0.0,
 };
 const install = eval('(' + js + ')');
 const installResult = install(CFG);
@@ -59,7 +59,7 @@ const line = (name) => root().childNodes[LINES.indexOf(name)];
 const text = (name) => line(name).textContent;
 const px = (v) => Math.round(parseFloat(v) * 100) / 100;
 // Cap height the game would have drawn at this text scale, in pixels.
-const cap0 = (s) => 0.03444 * s * H;
+const cap0 = (s) => 0.03634 * s * H;
 // Pushes a render through without changing any state, so a test can see what the HUD draws
 // after moving the clock.
 const tick = () => { post({ action: 'SET_HUD_VISIBLE', data: true }); flush(); };
@@ -74,7 +74,7 @@ check('zone',    text('zone'), 'Davis');
 check('street',  text('street'), 'Brouge Avenue / Carson Avenue');
 check('the compass letter is not seeded, it is localised', text('card'), '');
 check('unknown compass is hidden', line('card').style.display, 'none');
-check('footer', text('footer'), 'GTA.WORLD — Roleplay v3.8.2 — 188/1500 — 14:07');
+check('footer', text('footer'), 'GTA.WORLD – Roleplay v3.8.2 – 188/1500 – 14:07');
 
 section('the old HUD text, not the current HUD text');
 post({ action: 'HUD::SET_STATE', data: { cardinal: 'N' } });
@@ -148,9 +148,9 @@ install(CFG);
 post({ action: 'NUI::Speedometer::Show' });
 flush();
 check('nothing in an ordinary vehicle', line('els').style.display, 'none');
-check('the label sits 0.18 above the minimap, in line with the balances',
+check('the label sits 0.1795 above the minimap, in line with the balances',
       px(line('els').style.top),
-      px(0.985 * H - 0.18 * H + 0.4123 * cap0(0.6) - (cap0(0.6) / 0.711) * 0.1305));
+      px(0.985 * H - 0.1795 * H + 0.4123 * cap0(0.57) - (cap0(0.57) / 0.711) * 0.1305));
 post({ action: 'NUI::Speedometer::State', data: { elsVisible: true, elsCode: 1 } });
 flush();
 check('the label', text('els'), 'ELS');
@@ -160,14 +160,14 @@ check('shown',     line('els').style.display, '');
 post({ action: 'NUI::Speedometer::State', data: { elsCode: 2 } });
 flush();
 check('lights',        text('elsState'), 'LIGHTS');
-check('in yellow',     line('elsState').className.includes('ohud-y'), true);
+check('lights in yellow', line('elsState').className.includes('ohud-y'), true);
 post({ action: 'NUI::Speedometer::State', data: { elsCode: 3 } });
 flush();
 check('siren',     text('elsState'), 'SIREN');
 check('in green',  line('elsState').className.includes('ohud-g'), true);
 check('the state sits one line under the label',
       px(parseFloat(line('elsState').style.top) - parseFloat(line('els').style.top)),
-      px(0.07 * 0.6 * H));
+      px(38 / 1080 * H));
 check('centred with the balances', px(line('els').style.left), px(line('cash').style.left));
 
 section('the ELS state goes away again, as it did before');
@@ -245,7 +245,7 @@ post({ action: 'NUI::Global::Batch', data: [
 flush();
 check('cash after double delivery', text('cash'), '$1,000');
 check('version updates without a duplicate v',
-      text('footer'), 'GTA.WORLD — Roleplay v3.8.3 — 188/1500 — 14:07');
+      text('footer'), 'GTA.WORLD – Roleplay v3.8.3 – 188/1500 – 14:07');
 
 section('leaving the vehicle');
 post({ action: 'NUI::Speedometer::Hide' });
@@ -325,8 +325,8 @@ install(CFG);
 flush();
 // No rectangle yet, so the minimap is worked back out of the compass: a 54px compass is a fifth
 // of a 270px minimap, whose right edge is 315.2 - max(10, 270 * 0.06) = 299.
-check('compass fallback puts the divider at the right edge + 0.0393',
-      px(line('cdiv').style.left), px(299 + 0.0393 * W));
+check('compass fallback puts the divider at the right edge + 0.04034',
+      px(line('cdiv').style.left), px(299 + 0.04034 * W));
 
 post({ action: 'NUI::Hud::RadarRect',
        data: { left: 20, top: 725, width: 325, height: 155, screenW: 1600, screenH: 900 } });
@@ -336,21 +336,21 @@ flush();
 const right = 20 + 9.425 + 325, bottom = 725 + 155;
 check('the compass letter is centred 0.025 right of the edge',
       px(line('card').style.left), px(right + 0.025 * W));
-check('the street sits 0.04604 right of it',
-      px(line('street').style.left), px(right + 0.04604 * W));
+check('the street sits 0.04656 right of it',
+      px(line('street').style.left), px(right + 0.04656 * W));
 check('the speed sits 0.006 right of it',
       px(line('speed').style.left), px(right + 0.006 * W));
 
-// Cap height at scale 1 is 0.03444 of the screen, the cap top sits 0.4123 cap heights below the
+// Cap height at scale 1 is 0.03634 of the screen, the cap top sits 0.4123 cap heights below the
 // top of the game's text cell, and the stub font puts the cap top 0.1305em below the element.
 const cap = cap0;
 const top = (spec, s) => bottom - spec * H + 0.4123 * cap(s) - (cap(s) / 0.711) * 0.1305;
-check('the compass letter sits 0.046 above the bottom edge',
-      px(line('card').style.top), px(top(0.046, 1.0)));
-check('the zone sits 0.03907 above it, at half the scale',
-      px(line('zone').style.top), px(top(0.03907, 0.5)));
-check('the street 0.01507 above it',
-      px(line('street').style.top), px(top(0.01507, 0.4)));
+check('the compass letter sits 0.04693 above the bottom edge',
+      px(line('card').style.top), px(top(0.04693, 1.0)));
+check('the zone sits 0.04093 above it, at 0.525 of the scale',
+      px(line('zone').style.top), px(top(0.04093, 0.525)));
+check('the street 0.01693 above it',
+      px(line('street').style.top), px(top(0.01693, 0.44)));
 check('the font size draws capitals the right height',
       px(line('card').style.fontSize), px(cap(1.0) / 0.711));
 
@@ -362,27 +362,13 @@ post({ action: 'NUI::Hud::ToggleBigmap', data: { active: false } });
 flush();
 
 section('balances and the server line are placed against the screen');
-// 70px in from the right and 38px up from the bottom at 1920 by 1080, scaling with the screen
+// 70px in from the right and 35px up from the bottom at 1920 by 1080, scaling with the screen
 // the way the game's own text coordinates do.
 check('balances are centred 70/1920 of the width in', px(line('cash').style.left), px(W * (1 - 70 / 1920)));
-check('cash at 0.0591 down', px(line('cash').style.top), px(0.0591 * H + 0.4123 * cap(0.856) - (cap(0.856) / 0.711) * 0.1305));
-check('bank at 0.0991 down', px(line('bank').style.top), px(0.0991 * H + 0.4123 * cap(0.75) - (cap(0.75) / 0.711) * 0.1305));
+check('cash at 0.0603 down', px(line('cash').style.top), px(0.0603 * H + 0.4123 * cap(0.77) - (cap(0.77) / 0.711) * 0.1305));
+check('bank at 0.0983 down', px(line('bank').style.top), px(0.0983 * H + 0.4123 * cap(0.715) - (cap(0.715) / 0.711) * 0.1305));
 check('the server line is centred', px(line('footer').style.left), W / 2);
-check('38/1080 of the height up',  px(line('footer').style.top), px(H * (1 - 38 / 1080) + 0.4123 * cap(0.45) - (cap(0.45) / 0.711) * 0.1305));
-
-section('a long balance is kept clear of the right screen edge');
-// 13/1920 of the width is the margin the game leaves. A balance whose right edge runs past it
-// slides left by the overshoot; one that already clears it stays where it is.
-line('cash')._rect = { left: 1500, top: 0, width: 200, height: 20 };
-post({ action: 'HUD::SET_STATE', data: { cash: 123456789 } });
-flush();
-check('the overshoot is taken off the left edge', px(line('cash').style.left),
-      px(W * (1 - 70 / 1920) - (1700 - (W - 13 * W / 1920))));
-line('cash')._rect = { left: 1500, top: 0, width: 50, height: 20 };
-post({ action: 'HUD::SET_STATE', data: { cash: 250 } });
-flush();
-check('a balance that fits is not moved', px(line('cash').style.left), px(W * (1 - 70 / 1920)));
-line('cash')._rect = null;
+check('41/1080 of the height up',  px(line('footer').style.top), px(H * (1 - 41 / 1080) + 0.4123 * cap(0.50) - (cap(0.50) / 0.711) * 0.1305));
 
 section('the game\'s nudge moves the whole HUD, as it does the current one');
 post({ action: 'NUI::Hud::Offset', data: { x: 0.1, y: -0.02 } });
@@ -401,25 +387,25 @@ post({ action: 'NUI::Hud::RadarRect',
 flush();
 const floor = 0.985 * H;
 check('the compass letter is measured from the floor',
-      px(line('card').style.top), px(floor - 0.046 * H + 0.4123 * cap(1.0) - (cap(1.0) / 0.711) * 0.1305));
+      px(line('card').style.top), px(floor - 0.04693 * H + 0.4123 * cap(1.0) - (cap(1.0) / 0.711) * 0.1305));
 check('so is the street',
-      px(line('street').style.top), px(floor - 0.01507 * H + 0.4123 * cap(0.4) - (cap(0.4) / 0.711) * 0.1305));
+      px(line('street').style.top), px(floor - 0.01693 * H + 0.4123 * cap(0.44) - (cap(0.44) / 0.711) * 0.1305));
 check('and it ends above the bottom edge',
       parseFloat(line('street').style.top) + parseFloat(line('street').style.fontSize) < H, true);
 check('the ELS state is measured from it too',
-      px(line('els').style.top), px(floor - 0.18 * H + 0.4123 * cap(0.6) - (cap(0.6) / 0.711) * 0.1305));
+      px(line('els').style.top), px(floor - 0.1795 * H + 0.4123 * cap(0.57) - (cap(0.57) / 0.711) * 0.1305));
 check('the right edge is still the rectangle\'s', px(line('speed').style.left), px(270 * 1.029 + 0.006 * W));
 // A minimap that really does sit higher is followed.
 post({ action: 'NUI::Hud::RadarRect',
        data: { left: 0, top: 700, width: 270, height: 150, screenW: W, screenH: H } });
 flush();
 check('a higher minimap is followed',
-      px(line('card').style.top), px(850 - 0.046 * H + 0.4123 * cap(1.0) - (cap(1.0) / 0.711) * 0.1305));
+      px(line('card').style.top), px(850 - 0.04693 * H + 0.4123 * cap(1.0) - (cap(1.0) / 0.711) * 0.1305));
 
 section('a nonsense rectangle falls back to the compass again');
 post({ action: 'NUI::Hud::RadarRect', data: { left: 0, top: 0, width: 0, height: 0 } });
 flush();
-check('back to the compass', px(line('cdiv').style.left), px(299 + 0.0393 * W));
+check('back to the compass', px(line('cdiv').style.left), px(299 + 0.04034 * W));
 
 section('with no minimap at all, the docked block is not drawn');
 body.removeChild(compass);
@@ -435,7 +421,7 @@ section('the parts can be switched off');
 install(Object.assign({}, CFG, { showPlayers: false, showTime: false }));
 post({ action: 'HUD::SET_STATE', data: { version: '1.8.8a', players: 188, time: '14:07' } });
 flush();
-check('a short server line', text('footer'), 'GTA.WORLD — Roleplay v1.8.8a');
+check('a short server line', text('footer'), 'GTA.WORLD – Roleplay v1.8.8a');
 
 section('the weight reaches the measurement, not just the stylesheet');
 let seenFont = '';
@@ -537,14 +523,14 @@ body.removeChild(grid); dom.mutate(body);
 dom.fire(line('street'), 'wheel', { deltaY: -100 });
 dom.fire(line('street'), 'wheel', { deltaY: -100 });
 flush();
-check('two notches up is 1.1', px(line('street').style.fontSize), px(cap(0.4 * 1.1) / 0.711));
-check('the whole block scales', px(line('zone').style.fontSize), px(cap(0.5 * 1.1) / 0.711));
+check('two notches up is 1.1', px(line('street').style.fontSize), px(cap(0.44 * 1.1) / 0.711));
+check('the whole block scales', px(line('zone').style.fontSize), px(cap(0.525 * 1.1) / 0.711));
 dom.fire(line('zone'), 'mousedown', { clientX: 0, clientY: 0 });
 dom.fire(line('zone'), 'mousemove', { clientX: -8, clientY: 5 });
 dom.fire(line('zone'), 'mouseup', { clientX: -8, clientY: 5 });
 flush();
 check('the street moves with the zone', px(line('street').style.left), px(streetLeft0 - 8));
-check('and the compass letter', px(line('card').style.left), px(streetLeft0 - 0.04604 * W + 0.025 * W - 8));
+check('and the compass letter', px(line('card').style.left), px(streetLeft0 - 0.04656 * W + 0.025 * W - 8));
 
 // The cross hides a block: faded while editing, gone afterwards.
 dom.fire(cross('footer'), 'mousedown', {});
@@ -620,8 +606,23 @@ check('alive() reports true', api.alive(), 'true');
 flush();
 check('back on the page', document.getElementById('gtaw-oldhud-root') !== null, 'true');
 
+section('a face the user supplies is drawn at the old HUD\'s own numbers');
+{
+  const api0 = window.__gtawOldHud;
+  if (api0 && api0.destroy) api0.destroy();
+  install(Object.assign({}, CFG, { tuned: false }));
+  post({ action: 'NUI::Hud::RadarRect',
+         data: { left: 20, top: 725, width: 325, height: 155, screenW: 1600, screenH: 900 } });
+  post({ action: 'HUD::SET_STATE', data: { cardinal: 'N', zone: 'Davis', street: 'Grove Street' } });
+  flush();
+  const r = 20 + 9.425 + 325;
+  check('the divider at the right edge + 0.03904', px(line('cdiv').style.left), px(r + 0.03904 * W));
+  check('the street 0.04604 right of it',       px(line('street').style.left), px(r + 0.04604 * W));
+  check('the compass letter at the original size',
+        px(line('card').style.fontSize), px(0.03444 * 1.0 * H / 0.711));
+}
 section('destroy() leaves nothing behind');
-api.destroy();
+window.__gtawOldHud.destroy();
 check('root removed',   document.getElementById('gtaw-oldhud-root'), 'null');
 check('style removed',  document.getElementById('gtaw-oldhud-style'), 'null');
 check('hide rules removed', document.getElementById('gtaw-oldhud-hide'), 'null');

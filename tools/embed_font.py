@@ -5,14 +5,14 @@ The plugin fetches nothing, ever, so the fallback face is compiled into it as ba
 the font file in the repository into that source file. Run it after replacing the font; it needs
 nothing but a Python interpreter.
 
-    tools/embed_font.py [path/to/font.ttf]
+    tools/embed_font.py [path/to/font.ttf] [--original]
 """
 import base64
 import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT = os.path.join(ROOT, "font", "Oswald-VariableFont_wght.ttf")
+DEFAULT = os.path.join(ROOT, "font", "LeagueGothic-VariableFont_wdth.ttf")
 OUT = os.path.join(ROOT, "src", "hud", "font.cpp")
 
 # A single string literal is capped at 65,535 bytes by MSVC, and a whole font's base64 lands
@@ -59,7 +59,9 @@ def weight_range(raw: bytes) -> str:
 
 
 def main() -> int:
-    path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT
+    args = [a for a in sys.argv[1:] if a != "--original"]
+    original = "--original" in sys.argv[1:]
+    path = args[0] if args else DEFAULT
     ext = os.path.splitext(path)[1].lower()
     if ext not in MIME:
         print(f"{path}: not a font this can embed ({', '.join(sorted(MIME))})", file=sys.stderr)
@@ -83,6 +85,7 @@ def main() -> int:
             "mime": MIME[ext],
             "format": FORMAT[ext],
             "weights": weights,
+            "original": "true" if original else "false",
             "bytes": len(raw),
             "chars": len(b64),
             "parts": len(parts),
@@ -119,6 +122,9 @@ const char* const kFallbackFontFormat  = "%(format)s";
 // The weights the face can actually be drawn at, for the @font-face to declare. A range means
 // the browser instances the variable font instead of faking a heavier one.
 const char* const kFallbackFontWeights = "%(weights)s";
+
+// Whether this is the game's own face (embed_font.py --original). It sets which layout is used.
+const bool kFallbackFontIsOriginal = %(original)s;
 
 // A single string literal is capped at 65,535 bytes by MSVC, which a whole font's base64 sits
 // close enough to that it is not worth relying on. Null terminated.

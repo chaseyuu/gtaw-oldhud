@@ -62,9 +62,10 @@ struct Settings
     // Multiplies every text scale. 1.0 is the size the old HUD drew at.
     double fontScale = 1.0;
 
-    // How heavy to draw. The face built into the plugin is Oswald, a variable font whose weight
-    // axis runs 200 to 700, so anything in that range is a real instance of it rather than a
-    // synthesised one. 400 is regular, and is what the old HUD looked closest to.
+    // How heavy to draw. The face built into the plugin is League Gothic, which has a single
+    // weight, so anything above 400 is synthesised. A font placed next to the plugin may be a
+    // variable font, and then this picks a real instance of it. 400 is what the old HUD looked
+    // closest to.
     int fontWeight = 400;
 
     // Nudges for the whole block docked beside the minimap, as a fraction of the screen.
@@ -86,7 +87,7 @@ struct Settings
     std::string adminColor   = "#1c8000";   // Admin-Duty
     std::string testerColor  = "#731010";   // Tester-Duty
     std::string outlineColor = "#000000";
-    double      outlineWidth = 1.0;         // px
+    double      outlineWidth = 0.7;         // px
     double      textAlpha    = 0.784;       // 200 / 255
 
     int reconnectMs = 2000;
